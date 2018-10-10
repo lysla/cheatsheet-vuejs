@@ -1,4 +1,4 @@
-<h1>✨Lysla's VueJS CheatSheet</h1>
+<h1>✨Lysla's Vue.js CheatSheet</h1>
 <p>Personal reference and notes.</p>
 
 # structure
