@@ -1,4 +1,4 @@
-<h1>✨Lysla's Vue.js CheatSheet</h1>
+<h1>lysla's Vue.js cheatsheet</h1>
 <p>Personal reference and notes.</p>
 
 # structure
@@ -633,7 +633,7 @@ Vue.directive('somename', {
 }
 ```
 
-<em>Listening to hooks</em>
+<em>Listening to animation hooks</em>
 
 ```html
 <transition
