@@ -24,8 +24,13 @@
 
 		},
 		//...
+	},
+	watch: {
+		dataToWatch: function() {
+			// do something when data changes
+		}
 	}
-
+	//...
 }
 ```
 
@@ -532,6 +537,24 @@ Vue.directive('somename', {
 
 `after-leave-cancelled()`
 
+## routing
+
+<small>In main.js</small>
+
+`beforeEach(to, from, next)`
+
+<small>In routes.js</small>
+
+`beforeEnter(to, from, next)`
+
+<small>In component</small>
+
+`beforeRouteEnter(to, from, next)`
+
+<small>In component only</small>
+
+`beforeRouteLeave(to, from, next)`
+
 
 # transitions
 
@@ -544,6 +567,8 @@ Vue.directive('somename', {
 	<some-comp-or-html v-else key="k2"></some-comp-or-html>
 	<!-- or -->
 	<my-dynamic-component :is="someData"></my-dynamic-component>
+	<!-- or -->
+	<router-view></router-view>
 </transition>
 ```
 
@@ -658,5 +683,319 @@ Vue.directive('somename', {
 </script>
 ```
 
+# routing
+
+<em>Vue.js manage routing via vue-router which needs to be installed</em>
+
+<em><small>In main js file (main.js)</small></em>
+```js
+import Vue from 'vue';
+import VueRouter from 'vue-router';
+import App from './..path../App.vue';
+
+/* routes.js file */
+import { routes } from './..path../routes';
+
+Vue.use(VueRouter);
+const router = new VueRouter({
+	routes,
+	mode: 'hash' // or history
+	// 🎈 history will only work if the server is configurated so it always return index.html even with 404 error
+});
+
+new Vue({
+	el: '#app',
+	router,
+	render: h => h(App)
+});
+
+//...
+```
+
+<em><small>Create routes.js file</small></em>
+```js
+import PageHome from './..path../PageHome.vue';
+import PageFirst from './..path../PageFirst.vue';
+import PageSecond from './..path../PageSecond.vue';
+
+export const routes = [
+	{
+		path: '',
+		component: PageHome
+	},
+	{
+		path: '/page1',
+		component: PageFirst,
+		name: 'someRouteName' // not mandatory but useful
+	},
+	{
+		path: '/page2',
+		componenent: PageSecond
+	}
+]
+```
+
+<em><small>App.vue main instance</small></em>
+```html
+<template>
+	<div>
+		<!-- ... --->
+		<router-view>
+			<!-- routed components will be rendered here --->
+		</router-view>
+	</div>
+</template>
+
+```
+
+## routing parameters
+
+<em><small>In routes.js</small></em>
+```js
+import PageHome from './..path../User.vue';
+
+export const routes = [
+	{
+		path: '/user/:id',
+		component: User,
+		name: 'someRouteName'
+	}
+]
+```
+
+<em><small>In User component (User.vue)</small></em>
+```html
+<template>
+	<div>
+		Url parameter: {{ id }}
+	</div>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				id: this.$route.params.id
+			}
+		},
+		// 🎈 if we have a way to reactivate this component without destroying and recreating it, we need to watch the route to be updated everytime it changes, otherwise this is not needed
+		watch: {
+			'$route'(to, from) {
+				this.id = to.params.id;
+			}
+		}
+	}
+</script>
+```
+
+## routing links
+
+<em>Simple examples</em>
+
+```html
+<router-link to="/page">My page link</router-link>
+<router-link to="/">My home link</router-link>
+<router-link :to="someDataLink">My dynamic link</router-link>
+```
+
+<em>Active class and html style example</em>
+
+<em><small>We want a li tag which will contain an a tag, and the active class will be added only with url exact match</small></em>
+```html
+<router-link to="/" tag="li" active-class="my-active-class" exact><a>Home</a></router-link>
+```
+
+<em>Trigger navigation via javascript</em>
+
+```js
+//...
+export default {
+	//...
+	methods: {
+		navigateToPage() {
+			this.$router.push('/page1');
+			// or
+			this.$router.push( { name: 'someRouteName' });
+		}
+	}
+}
+
+```
+
+<em>Dynamic link with parameters example, taking the current route id</em>
+```html
+<router-link :to="myLink">My Link</router-link>
+
+<script>
+	export default {
+		data() {
+			return {
+				myLink: { 
+					name: 'someRouteName', 
+					params: { id: $route.params.id } 
+				},
+				// we can also pass query data
+				myLinkWithQuery: {
+					name: 'someRouteName', 
+					query: { lang: 'eng' }
+				},
+				// and hash
+				myLinkWithHash: {
+					name: 'someRouteName',
+					hash: '#someHash'
+				}
+			}
+		}
+	}
+</script>
+```
+
+## nested routes
+
+<em>We can have router views inside components already rendered inside a 'root' router view</em>
+
+<em><small>In the parent we do likewise as non-nested routes</small></em>
+```html
+<template>
+	<div>
+		<router-view></router-view>
+	</div>
+</template>
+```
+
+<em><small>In routes.js</small></em>
+```js
+// ... components imports
+
+export const routes = [
+	{
+		path: '/user',
+		component: User,
+		children: [
+			{
+				path: 'new', // /user/new
+				component: 'UserNew.vue'
+			},
+			{
+				path: ':id', // user/123
+				component: 'UserDetail.vue'
+			},
+			{
+				path: ':id/edit', //user/123/edit
+				component: 'UserEdit.vue'
+			}
+		]
+	}
+]
+```
+
+## multiple router views
+
+<em>You can change rendering place of components relatively to the router view</em>
+
+<em><small>In the component</small></em>
+```html
+<template>
+	<div>
+		<router-view></router-view>
+		<router-view name="position-one"></router-view>
+		<router-view name="position-two"></router-view>
+	</div>
+</template>
+```
+
+<em><small>In routes.js</small></em>
+```js
+// ... components imports
+
+export const routes = [
+	{
+		path: '/page',
+		components: {
+			default: MainComponent,
+			positionOne: SwitchingComponent
+		}
+	},
+	{
+		path: '/pageSwitched',
+		components: {
+			default: MainComponent,
+			positionTwo: SwitchingComponent
+		}
+	}
+]
+```
+
+## redirects
+
+<em><small>In routes.js</small></em>
+```js
+export const routes = [
+	{
+		path: '/nowhere',
+		redirect: '/gosomewhereelse'
+	},
+	// also
+	{
+		path: '/home',
+		name: 'routeHome'
+	},
+	{
+		path: '/oldhome',
+		redirect: { name: 'routeHome' }
+	},
+	// redirect all non-managed paths
+	{
+		path: '*',
+		redirect: { name: 'routeHome' }
+	}
+]
+```
+
+## guarding navigation hooks
 
 
+<em><small>Definition in component</small></em>
+```html
+<script>
+	export default {
+		//...
+		beforeRouteEnter(to, from, next) {
+			// call to proceed
+			next();
+		},
+		beforeRouteLeave(to, from, next) {
+			// call to proceed
+			next();
+		}
+	}
+</script>
+```
+<em><small>Definition in routes.js (uncommon)</small></em>
+```js
+export const routes = [
+	{
+		path: '/somewhere',
+		component: SomeComponent,
+		beforeEnter: (to, from, next) => {
+			// call to proceed
+			next();
+		}
+	}
+]
+```
+
+# lazy loading (webpack)
+
+<em>Importing components with lazy load for a webpack configuration</em>
+
+```js
+//import MyComponent from './..path../MyComponent.vue';
+
+const MyComponent = resolve => {
+	require.ensure(['./..path../MyComponent.vue'], () => {
+		resolve(require('./..path../MyComponent.vue'));
+	}, 'bundleGroupName');
+};
+```
+🎈 **bundleGroupName is not mandatory and but useful to let webpack bundle multiple components together even if lazy loaded**
