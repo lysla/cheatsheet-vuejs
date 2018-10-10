@@ -1,5 +1,5 @@
 <h1>lysla's Vue.js cheatsheet</h1>
-<p>Personal reference and notes.</p>
+<p>Simple indexed manual with notes.</p>
 
 # structure
 
