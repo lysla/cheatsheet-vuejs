@@ -325,7 +325,6 @@ export const myMixin = {
 	},
 	//...
 }
-
 ```
 
 <em><small>In Vue instance or component where i need the mixin</small></em>
@@ -983,6 +982,199 @@ export const routes = [
 		}
 	}
 ]
+```
+
+# vuex
+
+<p>State management with Vuex, which needs to be installed</p>
+
+## centralized data structure
+
+<em><small>In store.js</small></em>
+
+```js
+import Vue from 'vue';
+import Vuex from 'vuex';
+
+Vue.use(Vuex);
+
+export const store = new Vuex.Store({
+	state: {
+		centralizedAttr: 'someValue'
+	},
+	getters: {
+		myGetFunction: state => {
+			return state.centralizedAttr;
+		}
+	},
+	mutations: {
+		myUpdateFunction: (state, payload) => {
+			// payload contains the (single) arg when passed
+			// cannot contain async code
+			state.centralizedAttr = 'newValue';
+		}
+	},
+	actions: {
+		myAction: (context, payload) => {
+			// payload contains the (single) arg when passed
+			// can contain async code
+			context.commit('myUpdateFunction');
+		}
+	}
+});
+```
+
+<em><small>In main.js</small></em>
+
+```js
+import Vue from 'vue';
+import App from './App.vue';
+import { store } from '../path../store';
+
+new Vue({
+	el: '#app',
+	store,
+	render: h => h(App)
+});
+
+```
+
+<em><small>Accessing centralized structure from components</small></em>
+
+```js
+export default {		
+	computed: {
+		centralizedProp() {
+			// accessing the value directly
+			return this.$store.state.centralizedAttr;
+			// or using getters
+			return this.$store.getters.myGetFunction;		
+		}						
+	},
+	methods: {
+		centralizedMethod() {
+			this.$store.commit('myUpdateFunction');
+		},
+		centralizedAction() {
+			this.$store.dispatch('myAction');
+		}
+	}
+}
+
+```
+
+<em><small>We also can use map helpers to import all state, getters, mutations and actions</small></em>
+
+```js
+import { mapState } from 'vuex';
+import { mapGetters } from 'vuex';
+import { mapMutations } from 'vuex';
+import { mapAction } from 'vuex';
+
+export default {
+	computed: {
+		// 🎈 the three dots allow the extraction of all methods in the object (es6 syntax) so we can then use other computed proprieties of our own
+		...mapState(['centralizedAttr']),
+		...mapGetters(['myGetter', 'anotherGetter']),
+		otherCompProp() {
+			//do something
+		}
+	},
+	methods: {
+		...mapMutations(['myUpdateFunction', 'anotherMutation']),
+		...mapActions(['myAction']),
+		otherMethod() {
+			//do something
+		}
+	}
+}
+```
+
+<em><small>Then we render values from the centralized structure like normal attributes</small></em>
+
+```html
+<!-- ... -->
+<div>{{ myGetter }}</div>
+<div>{{ myUpdateFunction }} {{ anotherMutation('someArg') }}</div>
+<div>{{ myAction('someArg') }}</div>
+
+```
+
+<p>🎈 We need to use an uncommon structure of computed proprieties if we need to bind a centralized value to a v-model input (two-way binding)</p>
+
+```html
+<template>
+	<div>
+		<input type="text" v-model="myCompPro">
+	</div>
+</template>
+
+<script>
+	export default {
+		computed: {
+			myCompProp: {
+				get() {
+					return this.$store.getters.myGetter;
+				},
+				set(value) {
+					this.$store.dispatch('myAction', value);
+				}
+			}
+		}
+	}
+</script>
+```
+
+## modules
+
+<p>Splitting the main store.js centralized state file using modules</p>
+
+<p>🎈 You can also split elements in different js files and using normal es6 import without using modules</p>
+
+<em><small>New splitted partial.js</small></em>
+
+```js
+const store = {
+	mySharedStore: 'someValue'
+};
+const getters = {
+	mySharedGetter: state => {
+		return state.mySharedStore;
+	}
+};
+const mutations = {
+	mySharedMutation: (state, payload) => {
+		// some mutation
+		state.mySharedStore = payload;
+	},
+};
+const actions = {
+	mySharedAction: (context, payload) => {
+		// some action
+		context.commit('myShareMutation', payload);
+	}
+};
+
+export default {
+	state,
+	getters,
+	mutations,
+	actions
+};
+```
+
+<em><small>In main store.js</small></em>
+
+```js
+//...
+import MyModule from '../path/..partial';
+
+export const store = new Vuex.Store({
+	//... global state, getters, mutations, actions
+	modules: {
+		MyModule
+	}
+});
 ```
 
 # lazy loading (webpack)
