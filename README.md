@@ -1005,6 +1005,11 @@ export const store = new Vuex.Store({
 	getters: {
 		myGetFunction: state => {
 			return state.centralizedAttr;
+		},
+		// 🎈 getters can also receive all getters as second arg
+		myGetFunction: (state, getters) => {
+			getters.myOtherGetFunction;
+			//...
 		}
 	},
 	mutations: {
@@ -1019,6 +1024,10 @@ export const store = new Vuex.Store({
 			// payload contains the (single) arg when passed
 			// can contain async code
 			context.commit('myUpdateFunction');
+		},
+		// 🎈 more commonly typed using only the commit method from the context parameter
+		myAction: ({commit}, payload) => {
+			commit('myUpdateFunction');
 		}
 	}
 });
@@ -1127,7 +1136,7 @@ export default {
 
 ## modules
 
-<p>Splitting the main store.js centralized state file using modules</p>
+<p>Splitting the main store.js centralized state file using modules, all structure is available from all the modules</p>
 
 <p>🎈 You can also split elements in different js files and using normal es6 import without using modules</p>
 
