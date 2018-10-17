@@ -962,6 +962,8 @@ export const routes = [
 		beforeRouteEnter(to, from, next) {
 			// call to proceed
 			next();
+			// can also redirect
+			next('/somewhere');
 		},
 		beforeRouteLeave(to, from, next) {
 			// call to proceed
@@ -1185,6 +1187,235 @@ export const store = new Vuex.Store({
 	}
 });
 ```
+
+# axios
+
+<p>HTTP interaction (REST) with axios, which need to be installed</p>
+
+```js
+import axios from 'axios';
+
+// can have global configuration
+axios.defaults.baseURL = 'http://apibaseurl/';
+axios.defaults.headers.common['SomeConfig'] = 'some config value';
+// ... and more
+```
+
+## POST request
+
+```js
+axios.post('http://apiurl/', dataObject, { extraOptions })
+	.then(response => {
+		// ...
+		console.log(response);
+	})
+	.catch(error => {
+		// ...
+		console.log(error);
+	});
+```
+
+## GET request
+
+```js
+axios.get('http://apiurl/', { extraOptions })
+	.then(response => {
+		// ...
+		console.log(response);
+	})
+	.catch(error => {
+		// ...
+		console.log(error);
+	});
+```
+
+## interceptors
+
+<p>Global snippets to be executed before a said action (request, response)</p> 
+
+```js
+import axios from 'axios';
+
+axios.interceptors.request.use(config => {
+	return config;
+});
+axios.interceptors.response.use(response => {
+	return response;
+});
+```
+
+## custom multiple instances
+
+<p>Its possible to configure globally more then one axios instance so to have multiple global configurations</p>
+
+<em><small>In a dedicated instance.js file</small></em>
+```js
+const instance = axios.create({
+	baseURL: 'http://instancebaseurl//'
+});
+
+
+instance.defaults.headers.common['SomeInstanceConf'] = 'some value';
+//... other axios configurations
+
+export default instance;
+```
+
+<em><small>In the location you need to use axios but with the instance configuration</small></em>
+
+```js
+import axios from '../path../instance';
+
+// ... normal axios actions
+```
+
+# authentication
+
+<p>SPA receive a Json Web Token (JWT) provided from authentication server; the token then gets stored into local browser baggage and via Vuex context, then accessed to check current authentication state or to send requests for data under authentication</p>
+
+<em><small>Token stored in Vuex global state management (store.js)</small></em>
+
+```js
+import Vue from 'vue';
+import Vuex from 'vuex';
+import axios from 'axios';
+
+Vue.use(Vuex);
+
+export default {
+	state: {
+		idToken: null,
+		userId: null,
+		userData: null
+	},
+	mutations: {
+		// login
+		authUser(state, userData) {
+			state.idToken = userData.token;
+			state.userId = userData.userId;
+		},
+		// logout
+		clearAuth(state) {
+			state.idToken = null;
+			state.userId = null;
+		}
+	},
+	actions: {
+		login({commit, dispatch}, authData) {
+			// axios http request
+			axios.post('http://url/', {
+				authData
+			}).then(res => {
+				commit('authUser', {
+					res.data.idToken,
+					res.data.userId
+				});
+				dispatch('accessUserData');
+			}).catch(error => {});
+		},
+		accessUserData({commit, state}) {
+			// example for axios http request having the token set
+			axios.get('http://url/auth='+state.idToken)
+				.then(res => {
+					state.userData = res.data;
+				})
+				.catch(error => {});
+		},
+		logout({commit}) {
+			commit('clearAuth');
+			// vue router redirect to home
+			router.replace('/');
+		}		
+	},
+	getters: {
+		isAuthenticated(state => {
+			return state.idToken !== null;
+		})
+		getUserData(state => {
+			return state.userData;
+		});
+	}
+}
+```
+
+## auto logout out of timer
+
+<p>Automatically logout after a server-set timer expires</p>
+
+```js
+//... imports and stuff in main store.js
+
+export default {
+	//...
+	actions: {
+		setLogoutTimer({commit, dispatch}, expiresIn) {
+			setTimeout(() => {
+				dispatch('logout')
+			}, expiresIn)
+		},
+		login({commit, dispatch}, authData) {
+			//... in axios promise
+			.then(res => {
+				// start the timer
+				dispatch('setLogoutTimer', res.data.expiresIn);
+			})
+			.error(err => {});
+		}
+	}
+}
+```
+
+## auto login within timer
+
+<p>Keep authentication after page reload, saving data in localStorage (browser storage)</p>
+
+```js
+//... imports and stuff in main store.js
+
+export default {
+	//...
+	actions: {		
+		login({commit, dispatch}, authData) {
+			//... in axios promise
+			.then(res => {
+				// we can calculate exact datetime of auth expiration
+				const now = new Date();
+				const expirationDate = new Date(now.getTime() + res.data.expiresIn);
+				// save server token and expiration date in browser baggage
+				localStorage.setItem('myToken', res.data.idToken);
+				localStorage.setItem('expirationDate', expirationDate);
+				localStorage.setItem('userId', res.data.userId);
+			})
+			.error(err => {});
+		},
+		tryAutoLogin({commit}) {
+			const token = localStorage.getItem('myToken');
+			if (token) {
+				const expirationDate = localStorage.getItem('expirationDate');
+				const now = new Date();
+				if (now < expirationDate) {
+					const userId = localStorage.getItem('userId');
+					commit('authUser', {
+						idToken: token,
+						userId: userId
+					});
+				}
+			}
+		},
+		logout({commit}) {
+			commit('clearAuth');
+			// clear local storage
+			localStorage.clear();
+			// or clear specific items
+			localStorage.removeItem('myToken');
+			localStorage.removeItem('expirationDate');
+			localStorage.removeItem('userId');
+			router.replace('/');
+		}
+	}
+}
+```
+
 
 # lazy loading (webpack)
 
