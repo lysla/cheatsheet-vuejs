@@ -1,7 +1,33 @@
 <h1>lysla's Vue.js cheatsheet</h1>
 <p>Simple indexed manual with notes.</p>
 
-# structure
+# vue cli 3
+
+```
+npm i -g @vue/cli
+```
+
+## create
+
+```
+vue create my-vue-app
+> Follow instruction to build your app
+```
+
+## run
+
+```
+npm run serve
+```
+
+## add a plugin
+
+```
+> Plugin name must be vue-cli-plugin-someplugin
+vue add someplugin
+```
+
+# main structure
 
 <em>General Vue instance or component structure</em>
 
