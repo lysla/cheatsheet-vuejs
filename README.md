@@ -1301,6 +1301,9 @@ import axios from '../path../instance';
 
 <em><small>Token stored in Vuex global state management (store.js)</small></em>
 
+💥 need fix on args (name: value - not just value)
+
+
 ```js
 import Vue from 'vue';
 import Vuex from 'vuex';
